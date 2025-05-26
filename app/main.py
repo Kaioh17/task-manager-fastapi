@@ -3,13 +3,17 @@ from .models import db_models
 from .database import engine, get_db
 from sqlalchemy.orm import Session
 from fastapi.params import Depends
-from .routers import org, user, task
+from .routers import org, user, task,auth, assign_tasks
 db_models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 app.include_router(org.router)
 app.include_router(user.router)
 app.include_router(task.router)
+app.include_router(auth.router)
+app.include_router(assign_tasks.router)
+
+
 
 @app.get("/")
 def root():

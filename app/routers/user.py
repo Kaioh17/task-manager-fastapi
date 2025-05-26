@@ -4,18 +4,23 @@ from fastapi.params import Depends
 from ..models import db_models,schemas
 from ..database import get_db
 from .. import utils
-router = APIRouter()
+from ..core import oauth2
+router = APIRouter(
+    prefix = "/user",
+    tags = ['Users']
+)
+
 
 
 ##get all users
-@router.get('/user', status_code = status.HTTP_200_OK, response_model=list[schemas.UserOut])
+@router.get('/', status_code = status.HTTP_200_OK, response_model=list[schemas.UserOut])
 def users(db: Session =  Depends(get_db)):
     user = db.query(db_models.Users).all()
 
     return user
 
 ##get user by id
-@router.get('/user/{user_id}', status_code = status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
+@router.get('/{user_id}', status_code = status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
 def user_id(user_id: int, db: Session = Depends(get_db)):
     user = db.query(db_models.Users).filter(db_models.Users.user_id == user_id).first()
 
@@ -25,8 +30,8 @@ def user_id(user_id: int, db: Session = Depends(get_db)):
     return user
 
 ## get all users in organization id
-@router.get('/user/{org_id}', status_code = status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
-def user_id(org_id: int, db: Session = Depends(get_db)):
+@router.get('/{org_id}', status_code = status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
+def user_org_id(org_id: int, db: Session = Depends(get_db)):
     user = db.query(db_models.Users).filter(db_models.Users.org_id == org_id).all()
  
     if not user:
@@ -35,7 +40,7 @@ def user_id(org_id: int, db: Session = Depends(get_db)):
     return user
 
 #create a user
-@router.post('/user', status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
+@router.post('/', status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
 def create_user(user: schemas.CreateUser, db:Session = Depends(get_db)):
     ##hash passwords
     hashed_password = utils.hash(user.user_password)
@@ -52,6 +57,23 @@ def create_user(user: schemas.CreateUser, db:Session = Depends(get_db)):
 
     return user_query
 
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(confirm_: schemas.DeleteUser ,db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    
+    if confirm_.confirm == "False":
+        return {"msg": "User deletion canceled"}
+    
+    print(confirm_.confirm)
+    user_query = db.query(db_models.Users).filter(db_models.Users.user_id == current_user.user_id)
+
+    user_query.delete(synchronize_session = False)
+
+    # db.commit()
+    
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    
+
+
 ##helper function to verify organization
 def _validate_organization(org: int,  db: Session = Depends(get_db)):
     ##check if user exists
@@ -60,3 +82,4 @@ def _validate_organization(org: int,  db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Organization {org} does not exist")
     
     return org
+
