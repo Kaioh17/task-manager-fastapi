@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, FastAPI, Response,status
 from sqlalchemy.orm import Session
+from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from fastapi.params import Depends
 from ..models import db_models,schemas
 from ..database import get_db
@@ -57,18 +58,18 @@ def create_user(user: schemas.CreateUser, db:Session = Depends(get_db)):
 
     return user_query
 
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(confirm_: schemas.DeleteUser ,db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+#delete user account 
+@router.delete("/delete", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(confirm: schemas.DeleteUser ,db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     
-    if confirm_.confirm == "False":
-        return {"msg": "User deletion canceled"}
+    ##confirm password before deleting account
+    if not utils.verify(confirm.user_password, current_user.user_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication not recognized!!")
     
-    print(confirm_.confirm)
+
     user_query = db.query(db_models.Users).filter(db_models.Users.user_id == current_user.user_id)
-
     user_query.delete(synchronize_session = False)
-
-    # db.commit()
+    db.commit()
     
     return Response(status_code=status.HTTP_204_NO_CONTENT)
     
