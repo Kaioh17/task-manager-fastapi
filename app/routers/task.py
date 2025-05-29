@@ -15,7 +15,7 @@ router = APIRouter(
 def create_task(task: schemas.TaskBase, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     
     role  =  current_user.user_role
-    if role != "Admin":
+    if role.lower() != "admin":
         raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail = "Access denied: insufficient role")
 
     task_query = db_models.Tasks(org_id = current_user.org_id, **task.dict())

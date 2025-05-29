@@ -5,8 +5,9 @@ from ..models import db_models,schemas
 from ..database import get_db
 from .. import utils
 from ..core import oauth2
+from datetime import datetime, timedelta
 
-"""Assign task endpoint will be used to display, add and complete tasks, assigned by an admin user of an organization"""
+"""Assign task endpoints will be used to display, add and complete tasks, assigned by an admin user of an organization"""
 
 router = APIRouter(
     prefix="/assigned"
@@ -33,8 +34,9 @@ def assign_tasks(tasks: schemas.AssignTask,db: Session = Depends(get_db), curren
 
     #how do we send the name of a t
     tasks_record = db.query(db_models.Tasks).filter(db_models.Tasks.task_id == tasks.task_id).first()
-    print(tasks_record.task_name)
-    print(tasks_record.task_description)
+
+    print(f"Task_records: {tasks_record}")
+    # print(tasks_record.task_description)
 
 
     assign_task = db_models.TaskAssignment(  
@@ -45,6 +47,11 @@ def assign_tasks(tasks: schemas.AssignTask,db: Session = Depends(get_db), curren
                                     **tasks.dict()
                                 )
     
+    ##check if due_date is valid (set at least 1 hour after current time)
+    offset = datetime.utcnow() + timedelta(hours=1)
+    if tasks.due_date < offset:
+        raise HTTPException(status_code=status.HTTP_425_TOO_EARLY, detail="Date and time not valid")
+    
     db.add(assign_task)
     db.commit()
     db.refresh(assign_task)
@@ -52,6 +59,55 @@ def assign_tasks(tasks: schemas.AssignTask,db: Session = Depends(get_db), curren
 
     return assign_task
 
-@router.patch("/", status_code=status.HTTP_202_ACCEPTED, response_model=schemas.AssignedTaskOut)
-def update_task_status(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    pass
+@router.patch("/{assignment_id}/status", status_code=status.HTTP_202_ACCEPTED, response_model=schemas.AssignedTaskOut)
+async def update_task_status(assignment_id: int, task_status: schemas.StatusUpdate,db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):##check if task is past due date
+    status_update = task_status.dict()
+
+
+    assigned_task = db.query(db_models.TaskAssignment).filter(db_models.TaskAssignment.assignment_id == assignment_id)
+    assignment = assigned_task.first()
+
+    if not assignment:
+         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail = f"Task with id: {assignment_id} does not exist")
+
+    assigned_task.update({"task_status":status_update['task_status'].lower()})
+
+    ## check if task is still valid
+    get_due_date = assignment.due_date
+    # print(f"time now {datetime.utcnow()} < {get_due_date}")
+    if datetime.utcnow() > get_due_date:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail = f"Task is past due date")
+    
+    db.commit()
+    
+    ##send to audit once task is set to complete 
+    if assignment.task_status.lower() == "complete":
+        audit_entry = db_models.AuditLog(assignment_id = assignment.assignment_id, 
+                           task_id = assignment.task_id,
+                           org_id = assignment.task.org_id,
+                           user_id = assignment.user_id,
+                            task_name = assignment.task.task_name, 
+                            task_description = assignment.task.task_description,
+                            task_status = assignment.task_status,
+                            assigned_on = assignment.created_on
+                            )
+
+        # db_models.AuditLog(assigned_update.assignment_id, assigned_update.task_id, assigned_update.task_name,assigned_update.task_description)
+        print(assignment.task.task_name, assignment.task.task_description)
+
+    ##timed delete using celery and redis
+  
+
+    # sending proof od completion
+
+
+    ##validate file types   
+    ALLOWED_TYPES = ["image"]   
+
+    db.add(audit_entry)
+    db.delete(assignment)
+    db.commit()
+    
+    return assigned_task.first()
