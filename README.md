@@ -17,11 +17,15 @@ app/
   main.py           # FastAPI app entry point
   database.py       # Database connection and session
   utils.py          # Utility functions (e.g., password hashing)
+  core/
+    oauth2py        #handles tokenization and verification
   models/
     db_models.py    # SQLAlchemy ORM models
     schemas.py      # Pydantic schemas for validation
     config.py       # Settings management
   routers/
+    auth.py         # Authentication endpoints
+    assign_task.py  # Assigntasks(admin only) Complete_task endpoints(for file uploads and     change of status)
     org.py          # Organization endpoints
     user.py         # User endpoints
     task.py         # Task endpoints
@@ -68,9 +72,13 @@ Visit [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the interacti
 - `POST /user` - Create a new user
 - `GET /user/{user_id}` - Get user by ID
 - `GET /user/{org_id}` - List users in an organization
-- (Add task endpoints as implemented)
+- `GET /assigned/` - List all tasks assigned to the current user
+- `POST /assigned/` - Assign a task (admin only)
+- `PATCH /assigned/{assignment_id}/status` - Update task status and upload proof of completion
 
 ## License
+
+MIT
 
 
 
