@@ -65,6 +65,7 @@ class AuditLog(Base):
     task_name = Column(String, nullable=False)
     task_description = Column(String, nullable=True)
     task_status = Column(String, nullable=False)
+    proof_of_completion = Column(String, nullable = False, server_default=text("'awaiting'"))
     completed_on = Column(TIMESTAMP(timezone = True), nullable=False
                         ,server_default=text('now()'))
     approved_by = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=True)

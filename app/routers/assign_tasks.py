@@ -6,6 +6,11 @@ from ..database import get_db
 from .. import utils
 from ..core import oauth2
 from datetime import datetime, timedelta
+import os
+from uuid import uuid4
+
+from typing import Optional
+from fastapi import File, UploadFile,Form
 
 """Assign task endpoints will be used to display, add and complete tasks, assigned by an admin user of an organization"""
 
@@ -60,10 +65,14 @@ def assign_tasks(tasks: schemas.AssignTask,db: Session = Depends(get_db), curren
     return assign_task
 
 @router.patch("/{assignment_id}/status", status_code=status.HTTP_202_ACCEPTED, response_model=schemas.AssignedTaskOut)
-async def update_task_status(assignment_id: int, task_status: schemas.StatusUpdate,db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):##check if task is past due date
-    status_update = task_status.dict()
+async def update_task_status(assignment_id: int, 
+                             task_status: str = Form(...), proof_of_completion: Optional[UploadFile] = File(None),
+                             db: Session = Depends(get_db), 
+                             current_user: int = Depends(oauth2.get_current_user)):##check if task is past due date
+     ##timed delete using celery and redis
+    
 
-
+    # status_update = task_status.dict()
     assigned_task = db.query(db_models.TaskAssignment).filter(db_models.TaskAssignment.assignment_id == assignment_id)
     assignment = assigned_task.first()
 
@@ -71,14 +80,37 @@ async def update_task_status(assignment_id: int, task_status: schemas.StatusUpda
          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail = f"Task with id: {assignment_id} does not exist")
 
-    assigned_task.update({"task_status":status_update['task_status'].lower()})
+    assigned_task.update({"task_status":task_status.lower()})
 
     ## check if task is still valid
     get_due_date = assignment.due_date
-    # print(f"time now {datetime.utcnow()} < {get_due_date}")
+
     if datetime.utcnow() > get_due_date:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail = f"Task is past due date")
+    
+    ##validate file types   
+    ALLOWED_TYPES = ["image/png", "image/jpeg",  "application/pdf", 
+                 "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]   
+    
+    if proof_of_completion and proof_of_completion.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail = 'File type not supported')
+
+
+    ##upload file 
+    UPLOAD_DIR = "proofs/"
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    if proof_of_completion:
+        file_ext = os.path.splitext(proof_of_completion.filename)[-1]
+        file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}{file_ext}")
+        with open(file_path, "wb") as f:
+            f.write(proof_of_completion.file.read())
+
+    
+    assigned_task.update({"proof_of_completion" : file_path})
+    
+
     
     db.commit()
     
@@ -91,23 +123,18 @@ async def update_task_status(assignment_id: int, task_status: schemas.StatusUpda
                             task_name = assignment.task.task_name, 
                             task_description = assignment.task.task_description,
                             task_status = assignment.task_status,
+                            proof_of_completion = assignment.proof_of_completion,
                             assigned_on = assignment.created_on
                             )
 
         # db_models.AuditLog(assigned_update.assignment_id, assigned_update.task_id, assigned_update.task_name,assigned_update.task_description)
         print(assignment.task.task_name, assignment.task.task_description)
 
-    ##timed delete using celery and redis
+   
   
-
-    # sending proof od completion
-
-
-    ##validate file types   
-    ALLOWED_TYPES = ["image"]   
 
     db.add(audit_entry)
     db.delete(assignment)
     db.commit()
     
-    return assigned_task.first()
+    return assignment
