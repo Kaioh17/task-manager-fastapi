@@ -61,7 +61,6 @@ def assign_tasks(tasks: schemas.AssignTask,db: Session = Depends(get_db), curren
     db.commit()
     db.refresh(assign_task)
     
-
     return assign_task
 
 @router.patch("/{assignment_id}/status", status_code=status.HTTP_202_ACCEPTED, response_model=schemas.AssignedTaskOut)
@@ -88,30 +87,35 @@ async def update_task_status(assignment_id: int,
     if datetime.utcnow() > get_due_date:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail = f"Task is past due date")
-    
-    ##validate file types   
-    ALLOWED_TYPES = ["image/png", "image/jpeg",  "application/pdf", 
-                 "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]   
-    
-    if proof_of_completion and proof_of_completion.content_type not in ALLOWED_TYPES:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail = 'File type not supported')
-
-
-    ##upload file 
-    UPLOAD_DIR = "proofs/"
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-
+    print(f"proof::: {proof_of_completion}")
+    ##If user provides proof 
     if proof_of_completion:
-        file_ext = os.path.splitext(proof_of_completion.filename)[-1]
-        file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}{file_ext}")
-        with open(file_path, "wb") as f:
-            f.write(proof_of_completion.file.read())
+        ##validate file types   
+        ALLOWED_TYPES = ["image/png", "image/jpeg",  "application/pdf", 
+                    "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]   
+        
+        if proof_of_completion and proof_of_completion.content_type not in ALLOWED_TYPES:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail = 'File type not supported')
 
-    
-    assigned_task.update({"proof_of_completion" : file_path})
-    
 
-    
+        ##upload file 
+        UPLOAD_DIR = "proofs/"
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+        if proof_of_completion:
+            file_ext = os.path.splitext(proof_of_completion.filename)[-1]
+            file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}{file_ext}")
+            with open(file_path, "wb") as f:
+                f.write(proof_of_completion.file.read())
+
+        
+        assigned_task.update({"proof_of_completion" : file_path})
+    else:
+        assigned_task.update({"proof_of_completion" : "not needed"})
+
+        
+
+        
     db.commit()
     
     ##send to audit once task is set to complete 
