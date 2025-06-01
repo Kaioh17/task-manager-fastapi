@@ -12,10 +12,15 @@ from uuid import uuid4
 from typing import Optional
 from fastapi import File, UploadFile,Form
 
-"""Assign task endpoints will be used to display, add and complete tasks, assigned by an admin user of an organization"""
+"""
+This module provides endpoints for assigning tasks, displaying assigned tasks, 
+and marking tasks as complete. These endpoints are primarily used by admin users 
+of an organization to manage tasks for their subordinates.
+"""
 
 router = APIRouter(
-    prefix="/assigned"
+    prefix="/assigned",
+    tags= ['Assigned']
 )
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model= list[schemas.AssignedTaskOut])
@@ -71,13 +76,21 @@ async def update_task_status(assignment_id: int,
      ##timed delete using celery and redis
     
 
-    # status_update = task_status.dict()
-    assigned_task = db.query(db_models.TaskAssignment).filter(db_models.TaskAssignment.assignment_id == assignment_id)
+    assigned_task = db.query(db_models.TaskAssignment).filter(db_models.TaskAssignment.assignment_id == assignment_id) #get task
     assignment = assigned_task.first()
 
     if not assignment:
-         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail = f"Task with id: {assignment_id} does not exist")
+         raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail = f"Task with id: {assignment_id} does not exist"
+                    )
+    
+    if task_status.lower() != "complete":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=f"Invalid task status: '{task_status}'. Only 'complete' is allowed."
+        )
+        print(f"Debug: Received invalid task_status value: {task_status}")
 
     assigned_task.update({"task_status":task_status.lower()})
 
@@ -87,35 +100,32 @@ async def update_task_status(assignment_id: int,
     if datetime.utcnow() > get_due_date:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail = f"Task is past due date")
-    print(f"proof::: {proof_of_completion}")
-    ##If user provides proof 
+    print(f"proof: {proof_of_completion}")
+    file_path = None
     if proof_of_completion:
-        ##validate file types   
-        ALLOWED_TYPES = ["image/png", "image/jpeg",  "application/pdf", 
-                    "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]   
-        
-        if proof_of_completion and proof_of_completion.content_type not in ALLOWED_TYPES:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail = 'File type not supported')
+        # Validate file types
+        ALLOWED_TYPES = [
+            "image/png", "image/jpeg", "application/pdf",
+            "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ]
+        if proof_of_completion.content_type not in ALLOWED_TYPES:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='File type not supported')
 
-
-        ##upload file 
         UPLOAD_DIR = "proofs/"
         os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-        if proof_of_completion:
-            file_ext = os.path.splitext(proof_of_completion.filename)[-1]
-            file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}{file_ext}")
+        file_ext = os.path.splitext(proof_of_completion.filename)[-1]
+        file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}{file_ext}")
+        try:
+            contents = await proof_of_completion.read()
             with open(file_path, "wb") as f:
-                f.write(proof_of_completion.file.read())
-
-        
-        assigned_task.update({"proof_of_completion" : file_path})
+                f.write(contents)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
+        assigned_task.update({"proof_of_completion": file_path})
     else:
-        assigned_task.update({"proof_of_completion" : "not needed"})
+        # If proof is not required, set to None
+        assigned_task.update({"proof_of_completion": None})
 
-        
-
-        
     db.commit()
     
     ##send to audit once task is set to complete 
@@ -131,10 +141,7 @@ async def update_task_status(assignment_id: int,
                             assigned_on = assignment.created_on
                             )
 
-        # db_models.AuditLog(assigned_update.assignment_id, assigned_update.task_id, assigned_update.task_name,assigned_update.task_description)
-        print(assignment.task.task_name, assignment.task.task_description)
-
-   
+      
   
 
     db.add(audit_entry)
