@@ -76,6 +76,10 @@ Visit [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the interacti
 - `POST /assigned/` - Assign a task (admin only)
 - `PATCH /assigned/{assignment_id}/status` - Update task status and upload proof of completion
 
+## Database Schema
+
+![Database Schema](drawSQL-image-export-2025-06-02.png)
+
 ## License
 
 MIT
