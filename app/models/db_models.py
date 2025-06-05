@@ -70,3 +70,20 @@ class AuditLog(Base):
                         ,server_default=text('now()'))
     approved_by = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=True)
     assigned_on = Column(TIMESTAMP(timezone = True), nullable=False)
+
+""""Saves all completed and approved tasks in archive(deleted after a month)"""
+class ApprovedTaskArchive(Base):
+    __tablename__ = "approved_task_archives"
+    assignment_id = Column(Integer, primary_key=True, server_default=text("floor(random() * 1000000 + 1)::int"), nullable=False)
+    task_id = Column(Integer, ForeignKey("tasks.task_id",  ondelete="CASCADE"), nullable=False)
+    org_id = Column(Integer, ForeignKey("organizations.org_id",  ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    task_name = Column(String, nullable=False)
+    task_description = Column(String, nullable=True)
+    task_status = Column(String, nullable=False)
+    proof_of_completion = Column(String, nullable = True, server_default=text("'awaiting'"))
+    completed_on = Column(TIMESTAMP(timezone = True), nullable=False)
+    approved_by = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    assigned_on = Column(TIMESTAMP(timezone = True), nullable=False)
+    created_on = Column(TIMESTAMP(timezone = True), nullable=False
+                        ,server_default=text('now()'))

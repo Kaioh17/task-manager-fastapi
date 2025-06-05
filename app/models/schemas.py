@@ -79,17 +79,11 @@ class AssignTask(AssignTaskBase):
 class StatusUpdate(BaseModel):
     task_status: str = Form(...)
     proof_of_completion: Optional[UploadFile] = File(None)
+class Approved(BaseModel):
+     assignment_id: int
 
 
 class AssignedTaskOut(BaseModel):
-    assignment_id: int
-    task_id: int
-    org_id: int
-    user_id: int
-    task: TaskOut
-    due_date: datetime
-
-class AssignedTaskOut2(StatusUpdate):
     assignment_id: int
     task_id: int
     org_id: int

@@ -31,7 +31,7 @@ def user_id(user_id: int, db: Session = Depends(get_db)):
     return user
 
 ## get all users in organization id
-@router.get('/{org_id}', status_code = status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
+@router.get('/organization/{org_id}', status_code = status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
 def user_org_id(org_id: int, db: Session = Depends(get_db)):
     user = db.query(db_models.Users).filter(db_models.Users.org_id == org_id).all()
  

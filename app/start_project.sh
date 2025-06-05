@@ -26,15 +26,16 @@ if [ $? != 0 ]; then
 
 fi
 
-# #windows 0: Start postgresql
-# tmux rename-window -t $SESSION:0 'postgres'
-# tmux send-keys -t $SESSION:0  "cd $PROJECT_DIR" C-m
-# tmux send-keys -t $SESSION:0 "source $VENV_PATH" C-m
 
-#     #windows 1: Fastapiserever
-#     tmux new-window -t $SESSION:1 'FastAPI'
-#     tmux send-keys -t $SESSION:1  "cd $PROJECT_DIR" C-m
-#     tmux send-keys -t $SESSION:1 "source $VENV_PATH" C-m
+###start up for tmux(command):
+# """" 
+# --tmux ls
+# -- tmux kill-session -t task-manager-fastapi(kill existing sessions)
+# -- chmod +x ~/task-manager-fastapi/app/start_project.sh
+# --  ./task-manager-fastapi/app/start_project.sh
+# --  tmux attach-session -t task-manager-fastapi
+
+# """"
 
  #windows 2
     # tmux new-window -t $SESSION -n 'celery'

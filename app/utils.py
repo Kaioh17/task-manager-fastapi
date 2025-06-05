@@ -10,3 +10,5 @@ def hash(password: str):
 ## verify 
 def verify(plain_pwd, hashed_pwd):
     return pwd_context.verify(plain_pwd, hashed_pwd)
+
+
