@@ -17,7 +17,7 @@ from ..models.config import Settings
 from datetime import time
 from ..redis_connection import redis_client
 import logging
-
+# logging.getLogger().addHandler(logging.StreamHandler())
 logger = logging.getLogger(__name__)
 settings = Settings()
 ### Limiter instance for rate limiting API requests
@@ -31,16 +31,16 @@ limiter = Limiter(
 router = APIRouter(
     tags = ['Authentication']
 )
+# #custom rate limit error handler
+# def setup_rate_limiter_handler(app):
+#     @router.exception_handler(RateLimitExceeded)
+#     async def rate_limit_handler(request: Request, exc:RateLimitExceeded):
+#         return JSONResponse(status_code=429, content={
+#             "detail": "Too many login attempts. Please try again later.",
+#             "retry_after": exc.retry_after,
+#             "time": int(time.time())
+#         })
 
-#custom rate limit error handler
-def setup_rate_limiter_handler(app):
-    @router.exception_handler(RateLimitExceeded)
-    async def rate_limit_handler(request: Request, exc:RateLimitExceeded):
-        return JSONResponse(status_code=429, content={
-            "detail": "Too many login attempts. Please try again later.",
-            "retry_after": exc.retry_after,
-            "time": int(time.time())
-        })
 
 """Helper Fynctions"""
 def get_user_rate_limit_key(email: str, ip: str) -> str:

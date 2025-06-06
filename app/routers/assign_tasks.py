@@ -8,6 +8,7 @@ from ..core import oauth2
 from datetime import datetime, timedelta
 import os
 from uuid import uuid4
+import logging
 
 from typing import Optional
 from fastapi import File, UploadFile,Form
@@ -73,23 +74,21 @@ def assign_tasks(tasks: schemas.AssignTask,db: Session = Depends(get_db), curren
 async def update_task_status(assignment_id: int, 
                              task_status: str = Form(...), proof_of_completion: Optional[UploadFile] = File(None),
                              db: Session = Depends(get_db), 
-                             current_user: int = Depends(oauth2.get_current_user)):##check if task is past due date
-    ##timed delete using celery and redis
-    ##email configuration: 
-    ###email will be sent to the user after beign assigned a task 
-    ###another email to the admin after complete modules
-    ###
-
-    assigned_task = db.query(db_models.TaskAssignment).filter(db_models.TaskAssignment.assignment_id == assignment_id) #get task
+                             current_user: int = Depends(oauth2.get_current_user)):
+    logging.info(f"User {current_user.user_id} attempting to update status for assignment {assignment_id}.")
+    assigned_task = db.query(db_models.TaskAssignment).filter(db_models.TaskAssignment.assignment_id == assignment_id)
     assignment = assigned_task.first()
 
+    
     if not assignment:
-         raise HTTPException(
+        logging.warning(f"Task with id {assignment_id} does not exist.")
+        raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail = f"Task with id: {assignment_id} does not exist"
                     )
     
     if task_status.lower() != "complete":
+        logging.warning(f"Invalid task status '{task_status}' received for assignment {assignment_id}.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail=f"Invalid task status: '{task_status}'. Only 'complete' is allowed."
@@ -97,22 +96,23 @@ async def update_task_status(assignment_id: int,
         print(f"Debug: Received invalid task_status value: {task_status}")
 
     assigned_task.update({"task_status":task_status.lower()})
+    logging.info(f"Updated task_status to '{task_status.lower()}' for assignment {assignment_id}.")
 
-    ## check if task is still valid
     get_due_date = assignment.due_date
-
     if datetime.utcnow() > get_due_date:
+        logging.warning(f"Task {assignment_id} is past due date.")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail = f"Task is past due date")
-    # print(f"proof: {proof_of_completion}")
+    db.commit()
+    #Adding files
     file_path = None
     if proof_of_completion:
-        # Validate file types
         ALLOWED_TYPES = [
             "image/png", "image/jpeg", "application/pdf",
             "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         ]
         if proof_of_completion.content_type not in ALLOWED_TYPES:
+            logging.warning(f"File type {proof_of_completion.content_type} not supported for assignment {assignment_id}.")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='File type not supported')
 
         UPLOAD_DIR = "proofs/"
@@ -120,37 +120,32 @@ async def update_task_status(assignment_id: int,
         file_ext = os.path.splitext(proof_of_completion.filename)[-1]
         file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}{file_ext}")
         try:
+
+            MAX_FILE_SIZE_MB = 10
+            if len(contents) > MAX_FILE_SIZE_MB * 1024 * 1024:
+                logging.warning(f"File too large for assignment {assignment_id}.")
+                raise HTTPException(status_code=400, detail="File too large")
+            
             contents = await proof_of_completion.read()
             with open(file_path, "wb") as f:
                 f.write(contents)
-            
-            ##limit file size been sent
-            MAX_FILE_SIZE_MB = 10
-            if len(contents) > MAX_FILE_SIZE_MB * 1024 * 1024:
-                raise HTTPException(status_code=400, detail="File too large")
+
+           
         except Exception as e:
+            logging.error(f"File upload failed for assignment {assignment_id}: {str(e)}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"File upload failed: {str(e)}")
         assigned_task.update({"proof_of_completion": file_path})
+        logging.info(f"Proof of completion uploaded for assignment {assignment_id} at {file_path}.")
     else:
-        # If proof is not required, set to None
         assigned_task.update({"proof_of_completion": None})
+        logging.info(f"No proof of completion provided for assignment {assignment_id}.")
 
     db.commit()
+    logging.info(f"Database commit complete for assignment {assignment_id}.")
     
-    ##send to audit once task is set to complete 
+    db.refresh(assignment)
+    ##move to audit_log tbale
     if assignment.task_status.lower() == "complete":
-        # audit_entry = db_models.AuditLog(
-        #                      assignment_id = assignment.assignment_id, 
-        #                    task_id = assignment.task_id,
-        #                    org_id = assignment.task.org_id,
-        #                    user_id = assignment.user_id,
-        #                     task_name = assignment.task.task_name, 
-        #                     task_description = assignment.task.task_description,
-        #                     task_status = assignment.task_status,
-        #                     proof_of_completion = assignment.proof_of_completion,
-        #                     assigned_on = assignment.created_on
-        #                   )
-
         audit_entry = {
                 "assignment_id" : assignment.assignment_id, 
                 "task_id" : assignment.task_id,
@@ -162,14 +157,9 @@ async def update_task_status(assignment_id: int,
                 "proof_of_completion" : assignment.proof_of_completion,
                 "assigned_on" : str(assignment.created_on)
         }
-        
-    print(audit_entry)
-
-    db.refresh(assignment)
-  
-    # Schedule the deletion of the task assignment after 60 seconds to clean up completed tasks from the database.
-    add_rows.apply_async(args = ["audit_log", audit_entry], countdown = 30)
-    delete_row.apply_async(args = ["task_assignment",assignment.assignment_id], countdown=60)
-    
+        logging.info(f"Archiving completed assignment {assignment_id} to audit_log.")
+        add_rows.apply_async(args = ["audit_log", audit_entry], countdown = 30)
+        logging.info(f"Scheduled deletion of completed assignment {assignment_id} from task_assignment.")
+        delete_row.apply_async(args = ["task_assignment",assignment.assignment_id], countdown=60)
     return assignment
 
