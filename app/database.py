@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from .models.config import Settings
 
 settings = Settings()
-print(settings.algorithm)
+# print(settings.algorithm)
 SQLALCHEMY_DATABASE_URL = settings.db_url
 engine  = create_engine(SQLALCHEMY_DATABASE_URL)
 

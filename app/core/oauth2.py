@@ -28,7 +28,7 @@ def create_access_token(data: dict):
     expire = datetime.utcnow() + timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire}) 
 
-    print(to_encode)
+    # print(to_encode)
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -45,7 +45,7 @@ def verify_access_token(token: str, credentials_exception):
     except JWTError:
         raise credentials_exception
     
-    print(token_data)
+    # print(token_data)
     return token_data
 
 #get the current user
