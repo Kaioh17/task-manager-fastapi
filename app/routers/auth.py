@@ -19,6 +19,7 @@ from ..redis_connection import redis_client
 import logging
 # logging.getLogger().addHandler(logging.StreamHandler())
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 settings = Settings()
 ### Limiter instance for rate limiting API requests
 limiter = Limiter(
@@ -79,7 +80,7 @@ def clear_failed_attempts(attempts_key: str):
 ## we will be verifying using the email provided by the user
 def login(request:Request ,user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     
-    logging.info(f"Log in process started for user {user_credentials.username}")
+    logger.info(f"Log in process started for user {user_credentials.username}")
 
     #get clients IP for rate limiting
     client_ip =  get_remote_address(request)
@@ -109,7 +110,7 @@ def login(request:Request ,user_credentials: OAuth2PasswordRequestForm = Depends
     access_token = oauth2.create_access_token(data = {"user_id": user.user_id, "user_email": user.user_email})
     
 
-    logging.info(f"Successful login for user: {user.first_name}{user.last_name}")
+    logger.info(f"Successful login for user: {user.first_name}{user.last_name}")
     return {"access_token": access_token,
              "token_type": "bearer"}
 

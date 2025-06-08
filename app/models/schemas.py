@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
 from fastapi import File, UploadFile,Form
@@ -24,8 +24,8 @@ class UserBase(BaseModel):
     last_name: str
     user_email: EmailStr
     org_id: int
-    user_password: str
-    user_role: str
+    user_password: str =Field(min_length=8)
+    user_role: str = Field(pattern="^(admin|user)$")
 
 class CreateUser(UserBase):
     pass
@@ -77,7 +77,7 @@ class AssignTaskBase(BaseModel):
 class AssignTask(AssignTaskBase):
     pass
 class StatusUpdate(BaseModel):
-    task_status: str = Form(...)
+    task_status: str = Form(...), Field()
     proof_of_completion: Optional[UploadFile] = File(None)
 class Approved(BaseModel):
      assignment_id: int

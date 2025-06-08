@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 import pytest
 from app.database import get_db,Base
 from app.tests.config_test import Settings
-
+from app.utils import hash
 settings =Settings()
 
 
@@ -16,7 +16,7 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit= False)
 
 
-# db = TestingSessionLocal()
+db = TestingSessionLocal()
 
 #create all tables 
 Base.metadata.create_all(bind=engine)
@@ -41,7 +41,7 @@ def _clean_test_db():
     db.commit()
     db.close()
     
-    
+
 ###organizations 
 @pytest.fixture
 def test_org():
@@ -61,16 +61,18 @@ def test_user(test_org):
                         org_id = test_org.org_id, 
                            first_name="Jane", 
                            last_name="Dunner" ,
-                           user_email="user1@gmail.com",
+                           user_email="ihunt@gmail.com",
                            user_password="strongpass1", 
                            user_role = "user"
                            )
+    hashed_pwd = hash(user.user_password) 
+    user.user_password = hashed_pwd
    
     db.add(user)
     db.commit()
     db.refresh(user)
-    db.close()
+    
 
     yield user
-
+    db.close()
 

@@ -10,20 +10,31 @@ from slowapi import Limiter,_rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from datetime import time
+import sys
 settings = Settings()
 
 ##logging format
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s-%(levelname)s - %(message)s"
-)
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format="%(asctime)s-%(levelname)s - %(message)s"
+# )
 
-logging.info("starting fast api")
+
+#logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+#stream handler
+stream_handler = logging.StreamHandler(sys.stdout)
+log_formatter = logging.Formatter("%(asctime)s [%(levelname)s]-%(message)s")
+stream_handler.setFormatter(log_formatter)
+logger.addHandler(stream_handler)
+
+
+logger.info("starting fast api")
 
 db_models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
-
-
 
 ### Limiter instance for rate limiting API requests
 limiter = Limiter(
