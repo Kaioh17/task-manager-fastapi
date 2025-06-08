@@ -11,16 +11,16 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 
 class Organizations(Base):
     __tablename__ = "organizations"
-    org_id = Column(Integer, primary_key=True, server_default=text("floor(random() * 1000000 + 1)::int"), nullable=False)
-    org_name = Column(String, nullable=False, unique=True, index =True) 
+    org_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
+    org_name = Column(String, nullable=False, unique=True, index=True) 
     org_description = Column(String, nullable=True)
     created_on = Column(TIMESTAMP(timezone = True), nullable=False
                         ,server_default=text('now()'))
 
 class Users(Base):
     __tablename__ = "users"
-    user_id = Column(Integer, primary_key=True, server_default=text("floor(random() * 1000000 + 1)::int"), nullable=False)
-    org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
+    org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
     first_name = Column(String(200), nullable=False)
     last_name = Column(String(200), nullable=False)
     user_email = Column(String(200), nullable=False, unique=True, index=True)
@@ -32,8 +32,8 @@ class Users(Base):
 
 class Tasks(Base):
     __tablename__ = "tasks"
-    task_id = Column(Integer, primary_key=True, server_default=text("floor(random() * 1000000 + 1)::int"), nullable=False)
-    org_id = Column(Integer, ForeignKey("organizations.org_id",  ondelete="CASCADE"), nullable=False)
+    task_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
+    org_id = Column(Integer, ForeignKey("organizations.org_id",  ondelete="CASCADE"), nullable=False, index=True)
     task_name = Column(String, nullable=False, index=True)
     task_description = Column(String, nullable=True)
     created_on = Column(TIMESTAMP(timezone = True), nullable=False
@@ -42,48 +42,48 @@ class Tasks(Base):
 
 class TaskAssignment(Base):
     __tablename__ = "task_assignments"
-    assignment_id = Column(Integer, primary_key=True, server_default=text("floor(random() * 1000000 + 1)::int"), nullable=False)
-    task_id = Column(Integer, ForeignKey("tasks.task_id",  ondelete="CASCADE"), nullable=False)
-    org_id = Column(Integer, ForeignKey("organizations.org_id",  ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    assignment_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.task_id",  ondelete="CASCADE"), nullable=False, index=True)
+    org_id = Column(Integer, ForeignKey("organizations.org_id",  ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
     task_name = Column(String, nullable=False, index=True)
     task_description = Column(String, nullable=True)
     due_date = Column(DateTime , nullable=False)
-    task_status = Column(String, nullable=False, server_default=text("'pending'"))
+    task_status = Column(String, nullable=False, server_default=text("'pending'"), index=True)
     proof_of_completion = Column(String, nullable = True, server_default=text("'awaiting'"))
-    assigned_by_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    assigned_by_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
     created_on = Column(TIMESTAMP(timezone = True), nullable=False
                         ,server_default=text('now()'))
     task = relationship("Tasks", back_populates="assignments")
 
 class AuditLog(Base):
     __tablename__ = "audit_log"
-    assignment_id = Column(Integer, primary_key=True, server_default=text("floor(random() * 1000000 + 1)::int"), nullable=False)
-    task_id = Column(Integer, ForeignKey("tasks.task_id",  ondelete="CASCADE"), nullable=False)
-    org_id = Column(Integer, ForeignKey("organizations.org_id",  ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
-    task_name = Column(String, nullable=False)
+    assignment_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.task_id",  ondelete="CASCADE"), nullable=False, index=True)
+    org_id = Column(Integer, ForeignKey("organizations.org_id",  ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
+    task_name = Column(String, nullable=False, index=True)
     task_description = Column(String, nullable=True)
-    task_status = Column(String, nullable=False)
+    task_status = Column(String, nullable=False, index=True)
     proof_of_completion = Column(String, nullable = True, server_default=text("'awaiting'"))
     completed_on = Column(TIMESTAMP(timezone = True), nullable=False
                         ,server_default=text('now()'))
-    approved_by = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=True)
+    approved_by = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=True, index=True)
     assigned_on = Column(TIMESTAMP(timezone = True), nullable=False)
 
-""""Saves all completed and approved tasks in archive(deleted after a month)"""
+# Saves all completed and approved tasks in archive (deleted after a month)
 class ApprovedTaskArchive(Base):
     __tablename__ = "approved_task_archives"
-    assignment_id = Column(Integer, primary_key=True, server_default=text("floor(random() * 1000000 + 1)::int"), nullable=False)
-    task_id = Column(Integer, ForeignKey("tasks.task_id",  ondelete="CASCADE"), nullable=False)
-    org_id = Column(Integer, ForeignKey("organizations.org_id",  ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
-    task_name = Column(String, nullable=False)
+    assignment_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.task_id",  ondelete="CASCADE"), nullable=False, index=True)
+    org_id = Column(Integer, ForeignKey("organizations.org_id",  ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
+    task_name = Column(String, nullable=False, index=True)
     task_description = Column(String, nullable=True)
-    task_status = Column(String, nullable=False)
+    task_status = Column(String, nullable=False, index=True)
     proof_of_completion = Column(String, nullable = True, server_default=text("'awaiting'"))
     completed_on = Column(TIMESTAMP(timezone = True), nullable=False)
-    approved_by = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    approved_by = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
     assigned_on = Column(TIMESTAMP(timezone = True), nullable=False)
     created_on = Column(TIMESTAMP(timezone = True), nullable=False
                         ,server_default=text('now()'))
