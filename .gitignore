@@ -4,3 +4,4 @@ venv2/
 app/.env
 proofs
 
+app/tests/.env.test

@@ -1,14 +1,17 @@
 # task-manager-fastapi
 
-A simple task management API built with FastAPI, SQLAlchemy, and PostgreSQL. This project allows organizations to manage users and tasks efficiently.
+A robust task management API built with FastAPI, SQLAlchemy, and PostgreSQL. This project enables organizations to efficiently manage users, tasks, and assignments with modern best practices.
 
 ## Features
 
 - Organization management (create, list, retrieve)
 - User management (create, list, retrieve, filter by organization)
 - Task management (CRUD for tasks, assign to users/organizations)
+- Task assignment and completion tracking (with file uploads as proof)
 - Password hashing for user security
 - Modular code structure with routers and models
+- Rate limiting and security best practices
+- Celery integration for background task processing (e.g., archiving, deletion)
 
 ## Project Structure
 
@@ -18,17 +21,19 @@ app/
   database.py       # Database connection and session
   utils.py          # Utility functions (e.g., password hashing)
   core/
-    oauth2py        #handles tokenization and verification
+    oauth2.py       # Handles tokenization and verification
   models/
     db_models.py    # SQLAlchemy ORM models
     schemas.py      # Pydantic schemas for validation
     config.py       # Settings management
   routers/
     auth.py         # Authentication endpoints
-    assign_task.py  # Assigntasks(admin only) Complete_task endpoints(for file uploads and     change of status)
+    assign_tasks.py # Assign tasks (admin only), complete task endpoints (file uploads, status changes)
     org.py          # Organization endpoints
     user.py         # User endpoints
     task.py         # Task endpoints
+  tests/            # Pytest-based test suite
+  redis_connection.py # Redis connection for rate limiting and Celery
 ```
 
 ## Getting Started
@@ -37,28 +42,36 @@ app/
 
 - Python 3.10+
 - PostgreSQL database
-- (Optional) Create a `.env` file for DB credentials
+- Redis (for rate limiting and background tasks)
+- (Optional) Create a `.env` file for DB and Redis credentials
 
 ### Installation
 
 1. Clone the repository:
-   ```powershell
+   ```bash
    git clone <repo-url>
    cd task-manager-fastapi
    ```
 
 2. Install dependencies:
-   ```powershell
-   pip install fastapi uvicorn sqlalchemy psycopg2-binary python-dotenv passlib[bcrypt] pydantic-settings
+   ```bash
+   pip install -r requirements.txt
+   # or, if requirements.txt is missing:
+   pip install fastapi uvicorn sqlalchemy psycopg2-binary python-dotenv passlib[bcrypt] pydantic-settings celery redis slowapi
    ```
 
-3. Set up your PostgreSQL database and update the connection string in `app/database.py` or use a `.env` file.
+3. Set up your PostgreSQL and Redis instances, and update the connection strings in `app/database.py` and `app/redis_connection.py` or use a `.env` file.
 
 ### Running the App
 
 Start the FastAPI server:
-```powershell
+```bash
 uvicorn app.main:app --reload
+```
+
+Start the Celery worker (for background tasks):
+```bash
+celery -A app.core.celery_worker.celery_app worker --loglevel=info
 ```
 
 Visit [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the interactive API documentation.
@@ -69,12 +82,13 @@ Visit [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the interacti
 - `POST /org` - Create a new organization
 - `GET /org/{org_id}` - Get organization by ID
 - `GET /user` - List all users
-- `POST /user` - Create a new user
+- `POST /user/create` - Create a new user
 - `GET /user/{user_id}` - Get user by ID
-- `GET /user/{org_id}` - List users in an organization
+- `GET /user/organization/{org_id}` - List users in an organization
 - `GET /assigned/` - List all tasks assigned to the current user
 - `POST /assigned/` - Assign a task (admin only)
 - `PATCH /assigned/{assignment_id}/status` - Update task status and upload proof of completion
+- `PATCH /audit-log/approve/{assigned_id}` - Approve a completed task (admin only)
 
 ## Database Schema
 
