@@ -37,7 +37,7 @@ def get_user(org_id: int, db: Session = Depends(get_db)):
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.OrgOut)
 def create_org(org: schemas.CreateOrg, db: Session = Depends(get_db)):
     logger.info(f"Creating organization with name: {org.org_name}")
-    org_query = db_models.Organizations(**org.dict())
+    org_query = db_models.Organizations(**org.model_dump())
     db.add(org_query)
     db.commit()
     db.refresh(org_query)
