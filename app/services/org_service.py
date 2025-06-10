@@ -12,6 +12,7 @@ def get_organization_by_id(org_id: int, db):
 
 def create_organization(org, db):
     org_query = db_models.Organizations(**org.model_dump())
+    
     db.add(org_query)
     db.commit()
     db.refresh(org_query)

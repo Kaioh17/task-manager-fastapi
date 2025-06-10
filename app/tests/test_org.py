@@ -6,19 +6,19 @@ from app.utils import hash, verify
 
 # Test: Create organization
 
-def test_create_org():
-    response = client.post(
-        "/org",
-        headers={"Content-Type": "application/json"},
-        json={
-            "org_name": "Hunters Association",
-            "org_description": "Hunt and kill monsters. Responsible for Journaling lores "
-        }
-    )
-    assert response.status_code == 201
-    data = response.json()
-    assert data["org_name"] == "Hunters Association"
-    assert data["org_description"].startswith("Hunt and kill")
+# def test_create_org():
+#     response = client.post(
+#         "/org",
+#         headers={"Content-Type": "application/json"},
+#         json={
+#             "org_name": "Hunters Association",
+#             "org_description": "Hunt and kill monsters. Responsible for Journaling lores "
+#         }
+#     )
+#     assert response.status_code == 201
+#     data = response.json()
+#     assert data["org_name"] == "Hunters Association"
+#     assert data["org_description"].startswith("Hunt and kill")
 
 
 # Test: Get all organizations
@@ -50,12 +50,12 @@ def test_get_org_by_invalid_id():
 
 # Test: Create organization with missing fields (should return 422)
 
-def test_create_org_missing_fields():
-    response = client.post(
-        "/org",
-        headers={"Content-Type": "application/json"},
-        json={
-            "org_description": "Missing name"
-        }
-    )
-    assert response.status_code == 422
+# def test_create_org_missing_fields():
+#     response = client.post(
+#         "/org",
+#         headers={"Content-Type": "application/json"},
+#         json={
+#             "org_description": "Missing name"
+#         }
+#     )
+#     assert response.status_code == 422

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-
+from fastapi.middleware.cors import CORSMiddleware
 from .models import db_models
 from .database import engine
 from .routers import audit_logs, org, user, task,auth, assign_tasks
@@ -12,12 +12,6 @@ from slowapi.errors import RateLimitExceeded
 from datetime import time
 import sys
 settings = Settings()
-
-##logging format
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format="%(asctime)s-%(levelname)s - %(message)s"
-# )
 
 
 #logging
@@ -33,8 +27,20 @@ logger.addHandler(stream_handler)
 
 logger.info("starting fast api")
 
+#create database
 db_models.Base.metadata.create_all(bind=engine)
+
+#Initialize FastAPI
 app = FastAPI()
+
+# Add CORS middleware - ADD THIS SECTION
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # React dev server
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 ### Limiter instance for rate limiting API requests
 limiter = Limiter(
