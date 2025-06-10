@@ -4,7 +4,7 @@ A robust task management API built with FastAPI, SQLAlchemy, and PostgreSQL. Thi
 
 ## Features
 
-- Organization management (create, list, retrieve)
+- Organization management (list, retrieve)
 - User management (create, list, retrieve, filter by organization)
 - Task management (CRUD for tasks, assign to users/organizations)
 - Task assignment and completion tracking (with file uploads as proof)
@@ -43,6 +43,7 @@ app/
 - Python 3.10+
 - PostgreSQL database
 - Redis (for rate limiting and background tasks)
+- testint with postman
 - (Optional) Create a `.env` file for DB and Redis credentials
 
 ### Installation
@@ -82,7 +83,8 @@ Visit [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the interacti
 - `POST /org` - Create a new organization
 - `GET /org/{org_id}` - Get organization by ID
 - `GET /user` - List all users
-- `POST /user/create` - Create a new user
+- `POST /user/create/admin` - Create a new admin
+- `POST /user/create/user` - Create a new user
 - `GET /user/{user_id}` - Get user by ID
 - `GET /user/organization/{org_id}` - List users in an organization
 - `GET /assigned/` - List all tasks assigned to the current user
