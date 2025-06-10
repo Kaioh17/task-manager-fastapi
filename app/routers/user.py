@@ -20,27 +20,32 @@ logger.setLevel(logging.DEBUG)
 
 ##get all users
 @router.get('/', status_code = status.HTTP_200_OK, response_model=list[schemas.UserOut])
-def users(db: Session =  Depends(get_db)):
+def users(db: Session =  Depends(get_db),current_user: int = Depends(oauth2.get_current_user)):
     logger.info("Fetching all users from the database.")
+    if current_user.user_role != "admin":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Only for authorized users")
     user = db.query(db_models.Users).all()
     logger.info(f"Fetched {len(user)} users.")
     return user
 
-##get user by id
-@router.get('/{user_id}', status_code = status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
-def user_id(user_id: int, db: Session = Depends(get_db)):
-    logger.info(f"Fetching user with user_id={user_id}.")
-    user = user_service.get_users_by_user_id(user_id, db)
-    if not user:
-        logger.warning(f"User with user_id={user_id} not found.")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="users {user_id} not found")
-    logger.info(f"User with user_id={user_id} found.")
-    return user
+# ##get user by id
+# @router.get('/{user_id}', status_code = status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
+# def user_id(user_id: int, db: Session = Depends(get_db)):
+#     logger.info(f"Fetching user with user_id={user_id}.")
+#     user = user_service.get_users_by_user_id(user_id, db)
+#     if not user:
+#         logger.warning(f"User with user_id={user_id} not found.")
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="users {user_id} not found")
+#     logger.info(f"User with user_id={user_id} found.")
+#     return user
 
 ## get all users in organization id
 @router.get('/organization/{org_id}', status_code = status.HTTP_202_ACCEPTED, response_model=list[schemas.UserOut])
-def user_org_id(org_id: int, db: Session = Depends(get_db)):
+def user_org_id(org_id: int, db: Session = Depends(get_db),current_user: int = Depends(oauth2.get_current_user) ):
     logger.info(f"Fetching users for organization org_id={org_id}.")
+    if current_user.user_role != "admin":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Only for authorized users")
+
     users = user_service.get_users_by_org_id(org_id, db)
     # users = db.query(db_models.Users).filter(db_models.Users.org_id == org_id).all()
     if not users:
@@ -50,7 +55,7 @@ def user_org_id(org_id: int, db: Session = Depends(get_db)):
     return users
 
 #create a user
-@router.post('/create', status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
+@router.post('/create/user', status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
 def create_user(user: schemas.CreateUser, db:Session = Depends(get_db)):
     logger.info(f"Creating user with email: {user.user_email}")
     try:
@@ -59,6 +64,20 @@ def create_user(user: schemas.CreateUser, db:Session = Depends(get_db)):
         logger.warning(str(e))
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     logger.info(f"User created with user_id={user_query.user_id}")
+    return user_query
+
+
+#create an admin
+@router.post('/create/admin', status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
+def create_user(user: schemas.CreateAdmin, db:Session = Depends(get_db)):
+    logger.info(f"Creating user with email: {user.user_email}")
+    try:
+        user_query = user_service.create_user_service_admin(user, db, utils)
+    except Exception as e:
+        logger.warning(str(e))
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    logger.info(f"User created with user_id={user_query.user_id}")
+
     return user_query
 
 #delete user account 
@@ -72,5 +91,3 @@ def delete_user(confirm: schemas.DeleteUser ,db: Session = Depends(get_db), curr
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     logger.info(f"User has been deleted.")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-    
-

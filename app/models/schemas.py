@@ -23,13 +23,18 @@ class UserBase(BaseModel):
     first_name: str
     last_name: str
     user_email: EmailStr
-    org_id: int
     user_password: str =Field(min_length=8)
-    user_role: str = Field(pattern="^(admin|user)$")
+    
 
 class CreateUser(UserBase):
-    pass
+    org_id: Optional[int] = None
+    user_role: str = Field(pattern="^(user)$")
 
+class CreateAdmin(UserBase):
+    user_role: str = Field(pattern="^(admin)$")
+    org_name: str
+    org_description: str
+    
 class DeleteUser(BaseModel):
     user_password : str
 
@@ -37,6 +42,7 @@ class DeleteUser(BaseModel):
 class UserOut(BaseModel):
     user_id: int
     org_id: int
+    organization: OrgOut
     first_name: str
     last_name: str
     user_email: str

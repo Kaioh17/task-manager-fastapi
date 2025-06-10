@@ -123,12 +123,14 @@ async def update_task_status(assignment_id: int,
         file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}{file_ext}")
         try:
 
+           
+            contents = await proof_of_completion.read()
+
             MAX_FILE_SIZE_MB = 10
             if len(contents) > MAX_FILE_SIZE_MB * 1024 * 1024:
                 logger.warning(f"File too large for assignment {assignment_id}.")
                 raise HTTPException(status_code=400, detail="File too large")
             
-            contents = await proof_of_completion.read()
             with open(file_path, "wb") as f:
                 f.write(contents)
 

@@ -16,6 +16,8 @@ class Organizations(Base):
     org_description = Column(String, nullable=True)
     created_on = Column(TIMESTAMP(timezone = True), nullable=False
                         ,server_default=text('now()'))
+    user = relationship("Users", back_populates="organization")
+
 
 class Users(Base):
     __tablename__ = "users"
@@ -28,6 +30,8 @@ class Users(Base):
     user_role = Column(String, nullable=False, index=True)
     created_on = Column(TIMESTAMP(timezone = True), nullable=False
                         ,server_default=text('now()'))
+    organization = relationship("Organizations", back_populates="user")
+    
     
 
 class Tasks(Base):
