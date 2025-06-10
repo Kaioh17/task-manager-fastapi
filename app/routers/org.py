@@ -4,7 +4,7 @@ from fastapi.params import Depends
 from ..models import db_models,schemas
 from ..database import get_db
 import logging
-
+from app.services import org_service
 router = APIRouter(
     prefix = "/org",
     tags = ['Organizations']
@@ -17,19 +17,19 @@ logger.setLevel(logging.DEBUG)
 @router.get("/", status_code = status.HTTP_200_OK, response_model=list[schemas.OrgOut])
 def get_org(db: Session = Depends(get_db)):
     logger.info("Fetching all organizations from the database.")
-    org = db.query(db_models.Organizations).all()
+    org = org_service.get_organizations(db)
     logger.info(f"Fetched {len(org)} organizations.")
     return org
 
 
 ##get organizations by id
 @router.get("/{org_id}", status_code=status.HTTP_202_ACCEPTED,response_model=schemas.OrgOut)
-def get_user(org_id: int, db: Session = Depends(get_db)):
+def get_org_id(org_id: int, db: Session = Depends(get_db)):
     logger.info(f"Fetching organization with org_id={org_id}.")
-    org = db.query(db_models.Organizations).filter(db_models.Organizations.org_id == org_id).first()
+    org = org_service.get_organization_by_id(org_id, db)
     if not org:
         logger.warning(f"Organization with org_id={org_id} not found.")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization {org_id} not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Organization {org_id} not found")
     logger.info(f"Organization with org_id={org_id} found.")
     return org
 
@@ -37,9 +37,6 @@ def get_user(org_id: int, db: Session = Depends(get_db)):
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.OrgOut)
 def create_org(org: schemas.CreateOrg, db: Session = Depends(get_db)):
     logger.info(f"Creating organization with name: {org.org_name}")
-    org_query = db_models.Organizations(**org.model_dump())
-    db.add(org_query)
-    db.commit()
-    db.refresh(org_query)
+    org_query = org_service.create_organization(org, db)
     logger.info(f"Organization created with org_id={org_query.org_id}")
     return org_query

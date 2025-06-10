@@ -16,8 +16,6 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit= False)
 
 
-db = TestingSessionLocal()
-
 #create all tables 
 Base.metadata.create_all(bind=engine)
 
@@ -54,6 +52,7 @@ def test_org():
     db.close()
     yield test_org
 
+#fixture for user 
 @pytest.fixture
 def test_user(test_org):
     db = TestingSessionLocal()
@@ -76,3 +75,43 @@ def test_user(test_org):
     yield user
     db.close()
 
+@pytest.fixture
+def test_admin(test_org):
+    db = TestingSessionLocal()
+
+    admin = db_models.Users(
+                        org_id = test_org.org_id, 
+                           first_name="Sam", 
+                           last_name="Winchester" ,
+                           user_email="winchester@gmail.com",
+                           user_password="strongpass1", 
+                           user_role = "admin"
+                           )
+    hashed_pwd = hash(admin.user_password) 
+    admin.user_password = hashed_pwd
+   
+    db.add(admin)
+    db.commit()
+    db.refresh(admin)
+    
+
+    yield admin
+    db.close()
+
+##
+@pytest.fixture
+def test_task(test_org):
+    db = TestingSessionLocal()
+
+    task = db_models.Tasks(
+                        org_id = test_org.org_id,
+                        task_name = "Hunt Rugarao",
+                        task_description = "North Western"
+                        )
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    
+
+    yield task
+    db.close()
