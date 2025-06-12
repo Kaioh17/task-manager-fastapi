@@ -5,3 +5,4 @@ proofs
 
 app/tests/.env.test
 .env
+.env.ec2
