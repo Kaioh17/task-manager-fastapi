@@ -1,7 +1,8 @@
 __pycache__
 venv/
 venv2/
-app/.env
+.env
 proofs
 
 app/tests/.env.test
+# frontend/node_modules
