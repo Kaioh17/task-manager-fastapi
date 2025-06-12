@@ -1,4 +1,4 @@
-version: "3.8"
+# version: "3.8"
 
 services:
   web:
@@ -7,11 +7,13 @@ services:
     ports:
      - "8000:8000"
     env_file:
-      - app/.env
+      - .env
     depends_on:
       db:
         condition: service_started
       redis:
+        condition: service_started
+      celery:
         condition: service_started
     volumes:
       - .:/app
@@ -19,15 +21,50 @@ services:
       sh -c "sleep 10 && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - app-network
+
+  celery:
+    build: .
+    container_name: celery_worker
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_started
+      db:
+        condition: service_started
+    volumes:
+      - .:/app
+    command: celery -A app.core.celery_worker.celery_app worker --loglevel=info
+    networks:
+      - app-network
+
+  # celery-beat:
+  #   build: .
+  #   container_name: celery_beat
+  #   env_file:
+  #     - app/.env
+  #   depends_on:
+  #     redis:
+  #       condition: service_started
+  #     db:
+  #       condition: service_started
+  #   volumes:
+  #     - .:/app
+  #   command: celery -A app.celery.celery_app.celery_app beat --loglevel=info
+  #   networks:
+  #     - app-network
+
   db:
     image: postgres:17
     container_name: postgres_db
+    env_file:
+      - .env
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "1308"
-      POSTGRES_DB: tasktracker_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

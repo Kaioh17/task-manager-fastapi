@@ -11,9 +11,14 @@ class Settings(BaseSettings):
     host: str
     redis_port: int
     redis_url: str
+    db_name: str
+    db_user: str
+    db_password: str
+    db_host: str = "db"  # Docker service name
+    db_port: int = 5432
     
   
 
     class Config:
-        env_file = "app/.env"
+        env_file = ".env"
 

@@ -34,9 +34,9 @@ def get_org_id(org_id: int, db: Session = Depends(get_db)):
     return org
 
 ## add record to organizations
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.OrgOut)
-def create_org(org: schemas.CreateOrg, db: Session = Depends(get_db)):
-    logger.info(f"Creating organization with name: {org.org_name}")
-    org_query = org_service.create_organization(org, db)
-    logger.info(f"Organization created with org_id={org_query.org_id}")
-    return org_query
+# @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.OrgOut)
+# def create_org(org: schemas.CreateOrg, db: Session = Depends(get_db)):
+#     logger.info(f"Creating organization with name: {org.org_name}")
+#     org_query = org_service.create_organization(org, db)
+#     logger.info(f"Organization created with org_id={org_query.org_id}")
+#     return org_query
