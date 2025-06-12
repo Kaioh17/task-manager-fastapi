@@ -18,10 +18,8 @@ def create_user_service(user: 'schemas.CreateUser', db, utils):
     """Service function to create a new user."""
     # if user.user_role == "admin":
     #     return create_user_service_admin(user, db, utils)
-
-    validate_user = db.query(db_models.Users).filter(db_models.Users.user_email == user.user_email).first()
-    if validate_user:
-        raise Exception("user with email already exists")
+    _validate_user(user, db)
+   
     hashed_password = utils.hash(user.user_password)
     user_query = db_models.Users(**user.model_dump())
     user_query.user_password = hashed_password
@@ -32,6 +30,11 @@ def create_user_service(user: 'schemas.CreateUser', db, utils):
     db.refresh(user_query)
     return user_query
 
+def _validate_user(user,db):
+    validate_user = db.query(db_models.Users).filter(db_models.Users.user_email == user.user_email).first()
+    if validate_user:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT
+                            ,detail= "user with email already exists")
 
 
 def create_user_service_admin(user: 'schemas.CreateAdmin', db, utils):

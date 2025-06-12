@@ -1,5 +1,5 @@
 import redis
-from .models.config import Settings
+from app.models.config import Settings 
 import logging
 
 logger = logging.getLogger(__name__)

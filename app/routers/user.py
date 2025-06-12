@@ -39,7 +39,12 @@ def users(db: Session =  Depends(get_db),current_user: int = Depends(oauth2.get_
 #     logger.info(f"User with user_id={user_id} found.")
 #     return user
 
-## get all users in organization id
+## get all users in organization
+
+@router.get('/organizations', response_model=list[schemas.OrgOut])
+def get_organizations(db: Session = Depends(get_db)):
+    return db.query(db_models.Organizations).all()
+
 @router.get('/organization/{org_id}', status_code = status.HTTP_202_ACCEPTED, response_model=list[schemas.UserOut])
 def user_org_id(org_id: int, db: Session = Depends(get_db),current_user: int = Depends(oauth2.get_current_user) ):
     logger.info(f"Fetching users for organization org_id={org_id}.")

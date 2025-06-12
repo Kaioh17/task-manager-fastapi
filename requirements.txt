@@ -1,12 +1,21 @@
-fastapi
-uvicorn
-sqlalchemy
-psycopg2-binary
-python-dotenv
-passlib[bcrypt]
-pydantic-settings
-celery
-redis
-slowapi
-pytest
-jwt
+fastapi==0.115.12
+uvicorn==0.34.3
+SQLAlchemy==2.0.41
+pydantic==2.11.5
+pydantic-settings==2.9.1
+passlib==1.7.4
+python-jose==3.5.0
+python-multipart==0.0.20
+email_validator==2.2.0
+starlette==0.46.2
+httpx==0.28.1
+slowapi==0.1.9
+psycopg2-binary==2.9.10
+cryptography==45.0.3
+python-dotenv==1.1.0
+celery==5.5.3
+redis==6.2.0
+# The following are only needed for development/testing
+# pytest==8.4.0
+# iniconfig==2.1.0
+# pluggy==1.6.0

@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    container_name: texoc_v1
+    ports:
+     - "8000:8000"
+    env_file:
+      - app/.env
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
+    command: >
+      sh -c "sleep 10 && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    networks:
+      - app-network
+  db:
+    image: postgres:17
+    container_name: postgres_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "1308"
+      POSTGRES_DB: tasktracker_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

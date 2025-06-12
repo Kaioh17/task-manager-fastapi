@@ -27,7 +27,7 @@ class UserBase(BaseModel):
     
 
 class CreateUser(UserBase):
-    org_id: Optional[int] = None
+    org_id: int
     user_role: str = Field(pattern="^(user)$")
 
 class CreateAdmin(UserBase):

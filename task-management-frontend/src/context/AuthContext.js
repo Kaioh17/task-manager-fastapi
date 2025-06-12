@@ -29,7 +29,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login(email, password);
-      const { access_token, token_type } = response;
+    //   const { access_token, token_type } = response;
+    const {access_token} = response;
       
       localStorage.setItem('access_token', access_token);
       
