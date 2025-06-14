@@ -17,23 +17,52 @@ A robust task management API built with FastAPI, SQLAlchemy, and PostgreSQL. Thi
 
 ```
 app/
-  main.py           # FastAPI app entry point
-  database.py       # Database connection and session
-  utils.py          # Utility functions (e.g., password hashing)
+  main.py                # FastAPI app entry point
+  database.py            # Database connection and session
+  utils.py               # Utility functions (e.g., password hashing)
+  redis_connection.py    # Redis connection for rate limiting and Celery
+
   core/
-    oauth2.py       # Handles tokenization and verification
+    __init__.py
+    oauth2.py            # Handles tokenization and verification
+
   models/
-    db_models.py    # SQLAlchemy ORM models
-    schemas.py      # Pydantic schemas for validation
-    config.py       # Settings management
+    __init__.py
+    db_models.py         # SQLAlchemy ORM models
+    schemas.py           # Pydantic schemas for validation
+    config.py            # Settings management
+
   routers/
-    auth.py         # Authentication endpoints
-    assign_tasks.py # Assign tasks (admin only), complete task endpoints (file uploads, status changes)
-    org.py          # Organization endpoints
-    user.py         # User endpoints
-    task.py         # Task endpoints
-  tests/            # Pytest-based test suite
-  redis_connection.py # Redis connection for rate limiting and Celery
+    __init__.py
+    auth.py              # Authentication endpoints
+    assign_tasks.py      # Assign tasks (admin only), complete task endpoints (file uploads, status changes)
+    org.py               # Organization endpoints
+    user.py              # User endpoints
+    task.py              # Task endpoints
+    audit_logs.py        # Audit log endpoints
+
+  services/
+    __init__.py
+    user_service.py
+    org_service.py
+    task_service.py
+    auth_service.py
+    assign_tasks_service.py
+    audit_logs_service.py
+
+  tests/
+    __init__.py
+    test_db_setup.py
+    test_user.py
+    test_org.py
+    test_task.py
+
+requirements.txt         # Python dependencies
+.env                     # Environment variables (not committed)
+docker-compose.yml       # Docker Compose configuration
+Dockerfile               # Docker build file (if present)
+README.md                # Project documentation
+.dockerignore            # Docker ignore file
 ```
 
 ## Getting Started
