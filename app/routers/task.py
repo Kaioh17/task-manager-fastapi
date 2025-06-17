@@ -14,7 +14,8 @@ router = APIRouter(
     tags = ['Tasks']
 )
 
-#only user_role with admin can use the app feature
+"""Task Endpoints"""
+
 @router.post("/create" , status_code = status.HTTP_201_CREATED, response_model=schemas.TaskOut)
 def create_task(task: schemas.TaskBase, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     logger.info(f"User {current_user.user_id} attempting to create a task.")
@@ -34,3 +35,10 @@ def tasks(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_
     task = task_service.get_task_service(db, current_user)
     logger.info(f"Fetched {len(task)} tasks for org_id={current_user.org_id}.")
     return task
+
+@router.delete("/delete/{task_id}", status_code= status.HTTP_204_NO_CONTENT)
+async def delete_tasks(task_id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    logger.info("Deleting tasks...")
+    await task =  task_service.del_task_service(db, current_user, task_id)
+    logger.info("Task deleted")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

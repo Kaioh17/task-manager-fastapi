@@ -37,38 +37,7 @@ def _validate_user(user,db):
                             ,detail= "user with email already exists")
 
 
-def create_user_service_admin(user: 'schemas.CreateAdmin', db, utils):
-    """Service function to create a new admin_users."""
-    validate_user = db.query(db_models.Users).filter(db_models.Users.user_email == user.user_email).first()
-    if validate_user:
-        raise Exception("user with email already exists")
-    hashed_password = utils.hash(user.user_password)
-    org_query = db_models.Organizations(org_name = user.org_name,
-                                        org_description = user.org_description)
-    db.add(org_query)
-    db.commit()
-    db.refresh(org_query)
-    
-    org = db.query(db_models.Organizations).filter(db_models.Organizations.org_name == user.org_name).first()
-    get_org_id = org.org_id
 
-    user_query = db_models.Users(
-                                org_id = get_org_id,
-                                first_name = user.first_name,
-                                 last_name = user.last_name,
-                                 user_email = user.user_email,
-                                 user_password = user.user_password,
-                                 user_role = user.user_role
-                                 )
-    
-    hashed_password = utils.hash(user.user_password)
-    # user_query = db_models.Users(**user.model_dump())
-    user_query.user_password = hashed_password
-
-    db.add(user_query)
-    db.commit()
-    db.refresh(user_query)
-    return user_query
 
 def delete_user_service(confirm, db, current_user, utils):
     """Service function to delete a user account after password confirmation."""

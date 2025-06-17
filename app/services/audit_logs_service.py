@@ -1,12 +1,11 @@
 # Service layer for audit_logs router
 from ..models import db_models
 from fastapi import HTTPException, status
+from ..routers import _router_utils
 
 def approve_task_service(assigned_id: int, db, current_user, add_rows, delete_row, logger):
     logger.info(f"User {current_user.user_id} attempting to approve assignment {assigned_id}.")
-    if current_user.user_role != "admin":
-        logger.warning(f"User {current_user.user_id} is not authorized to approve assignments.")
-        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail =f"User level not authorized")
+    _router_utils._ensure_not_regular_user(current_user)
 
     approve_query = db.query(db_models.AuditLog).filter(db_models.AuditLog.assignment_id == assigned_id)
     approve_data = approve_query.first()

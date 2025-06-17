@@ -28,19 +28,6 @@ def users(db: Session =  Depends(get_db),current_user: int = Depends(oauth2.get_
     logger.info(f"Fetched {len(user)} users.")
     return user
 
-# ##get user by id
-# @router.get('/{user_id}', status_code = status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
-# def user_id(user_id: int, db: Session = Depends(get_db)):
-#     logger.info(f"Fetching user with user_id={user_id}.")
-#     user = user_service.get_users_by_user_id(user_id, db)
-#     if not user:
-#         logger.warning(f"User with user_id={user_id} not found.")
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="users {user_id} not found")
-#     logger.info(f"User with user_id={user_id} found.")
-#     return user
-
-## get all users in organization
-
 @router.get('/organizations', response_model=list[schemas.OrgOut])
 def get_organizations(db: Session = Depends(get_db)):
     return db.query(db_models.Organizations).all()
