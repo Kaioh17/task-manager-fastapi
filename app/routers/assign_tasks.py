@@ -15,6 +15,7 @@ logger.setLevel(logging.DEBUG)
 from typing import Optional
 from fastapi import File, UploadFile,Form
 from .celery_task import delete_row,add_rows
+from ._router_utils import _ensure_not_regular_user
 
 """
 This module provides endpoints for assigning tasks, displaying assigned tasks, 
@@ -35,16 +36,14 @@ def assigned_tasks(db: Session = Depends(get_db), current_user: int = Depends(oa
     return ass_tasks
 
 
-### for admin use only
+### for admin, manager use only
 @router.post("/",  status_code=status.HTTP_201_CREATED,  response_model= schemas.AssignedTaskOut)
-def assign_tasks(tasks: schemas.AssignTask,db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    ### assign tasks to subordinate of organizations by providing user_id 
-    ##when admin provides the task_id it fetches the name and descriptio n of the tasks 
-    #assigns to the user 
-
-    role  =  current_user.user_role  
-    if role.lower() != "admin":  ## confirm user role
-        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail = "Access denied: role not authorized")
+def assign_tasks(tasks: schemas.AssignTask,db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)): 
+    
+    _ensure_not_regular_user(current_user)
+    # role  =  current_user.user_role  
+    # if role.lower() == "user":  ## confirm user role
+    #     raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail = "Access denied: role not authorized")
 
     #how do we send the name of a t
     tasks_record = db.query(db_models.Tasks).filter(db_models.Tasks.task_id == tasks.task_id).first()

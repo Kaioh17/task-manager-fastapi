@@ -60,7 +60,7 @@ def user_org_id(org_id: int, db: Session = Depends(get_db),current_user: int = D
     return users
 
 #create a user
-@router.post('/create/user', status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
+@router.post('/create', status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
 def create_user(user: schemas.CreateUser, db:Session = Depends(get_db)):
     logger.info(f"Creating user with email: {user.user_email}")
     try:
@@ -69,20 +69,6 @@ def create_user(user: schemas.CreateUser, db:Session = Depends(get_db)):
         logger.warning(str(e))
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     logger.info(f"User created with user_id={user_query.user_id}")
-    return user_query
-
-
-#create an admin
-@router.post('/create/admin', status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
-def create_user(user: schemas.CreateAdmin, db:Session = Depends(get_db)):
-    logger.info(f"Creating user with email: {user.user_email}")
-    try:
-        user_query = user_service.create_user_service_admin(user, db, utils)
-    except Exception as e:
-        logger.warning(str(e))
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    logger.info(f"User created with user_id={user_query.user_id}")
-
     return user_query
 
 #delete user account 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, FastAPI, Response,status
+from fastapi import APIRouter
 from sqlalchemy.orm import Session
 from fastapi.params import Depends
 from ..models import db_models,schemas
@@ -20,7 +20,7 @@ from app.services.audit_logs_service import approve_task_service
 
 router = APIRouter(
     prefix = "/audit-log",
-    tags=["audit-log"]
+    tags=["Audit-log"]
 )
 
 ##Admin approval

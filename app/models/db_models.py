@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship
 from ..database import Base
@@ -18,6 +19,13 @@ class Organizations(Base):
                         ,server_default=text('now()'))
     user = relationship("Users", back_populates="organization")
 
+#organiztion settings 
+class OrgSettings(Base):
+    __tablename__ = "org_settings"
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
+    org_id = Column(Integer, ForeignKey("organizations.org_id", ondelete="CASCADE"),unique=True, nullable=False, index=True)
+    settings = Column(JSONB, nullable=False, default=dict)
+    
 
 class Users(Base):
     __tablename__ = "users"
@@ -91,3 +99,4 @@ class ApprovedTaskArchive(Base):
     assigned_on = Column(TIMESTAMP(timezone = True), nullable=False)
     created_on = Column(TIMESTAMP(timezone = True), nullable=False
                         ,server_default=text('now()'))
+

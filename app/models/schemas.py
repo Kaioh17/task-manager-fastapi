@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
 from fastapi import File, UploadFile,Form
+from typing import Literal
 
 
 """Organizations schemas"""
@@ -17,6 +18,18 @@ class OrgOut(OrgBase):
     org_id: int
     model_config = {"from_attributes": True}
 
+"""organiztion settings (admin only)"""
+
+class SettingsPayload(BaseModel):
+    manager_clearance: Literal["high", "medium", "low"]
+    # theme: Literal["light", "dark"]
+
+class org_settings(BaseModel):
+    settings: SettingsPayload
+
+"""admin"""
+class PromoteUser(BaseModel):
+    user_role: str = "manager"
 
 """users schemas"""
 class UserBase(BaseModel):
@@ -41,13 +54,11 @@ class DeleteUser(BaseModel):
 ##response model
 class UserOut(BaseModel):
     user_id: int
-    org_id: int
-    organization: OrgOut
     first_name: str
     last_name: str
     user_email: str
     user_role: str
-
+    organization: OrgOut
 """login schemas"""
 class UserLogin(BaseModel):
     email: EmailStr

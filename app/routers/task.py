@@ -19,7 +19,7 @@ router = APIRouter(
 def create_task(task: schemas.TaskBase, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     logger.info(f"User {current_user.user_id} attempting to create a task.")
     role  =  current_user.user_role
-    if role.lower() != "admin":
+    if role.lower() == "user":
         logger.warning(f"Access denied for user {current_user.user_id} with role {role}.")
         raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED, 
                             detail = "Access denied: insufficient role")
