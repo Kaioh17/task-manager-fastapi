@@ -1,6 +1,6 @@
-# task-manager-fastapi
+# task-manager-fastapi(Texoc)
 
-A robust task management API built with FastAPI, SQLAlchemy, and PostgreSQL. This project enables organizations to efficiently manage users, tasks, and assignments with modern best practices.
+Texoc is a task management API built with FastAPI, PostgreSQL, and SQLAlchemy. It supports multiple organizations and uses role-based access. Admins or managers can assign tasks to users (employees, students, devs). Each task has a deadline. Users must upload a file (jpg, pdf, docx, etc.) as proof of completion. After submission, tasks stay active for 25 minutes, then move to an audit table for review.
 
 ## Features
 
@@ -72,7 +72,9 @@ README.md                # Project documentation
 - Python 3.10+
 - PostgreSQL database
 - Redis (for rate limiting and background tasks)
-- testint with postman
+- pydantic
+- Docker
+- Testing with postman(optional)
 - (Optional) Create a `.env` file for DB and Redis credentials
 
 ### Installation
@@ -112,8 +114,8 @@ Visit [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the interacti
 - `POST /org` - Create a new organization
 - `GET /org/{org_id}` - Get organization by ID
 - `GET /user` - List all users
-- `POST /user/create/admin` - Create a new admin
-- `POST /user/create/user` - Create a new user
+- `POST /user/create/` - Create a new admin
+- `POST /admin/create/` - Create a new user
 - `GET /user/{user_id}` - Get user by ID
 - `GET /user/organization/{org_id}` - List users in an organization
 - `GET /assigned/` - List all tasks assigned to the current user
