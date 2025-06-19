@@ -1,8 +1,6 @@
-from app.tests.test_db_setup import db,client,_clean_test_db,test_org, test_user
-from app.models.schemas import UserOut
+from app.tests.test_db_setup import db, client, test_org, test_user
 from app.models import db_models
 from app.core.oauth2 import create_access_token
-from app.utils import hash, verify
 
 # # Test: Get user by ID
 # def test_user_by_id(test_user):

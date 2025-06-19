@@ -32,11 +32,3 @@ def get_org_id(org_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Organization {org_id} not found")
     logger.info(f"Organization with org_id={org_id} found.")
     return org
-
-## add record to organizations
-# @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.OrgOut)
-# def create_org(org: schemas.CreateOrg, db: Session = Depends(get_db)):
-#     logger.info(f"Creating organization with name: {org.org_name}")
-#     org_query = org_service.create_organization(org, db)
-#     logger.info(f"Organization created with org_id={org_query.org_id}")
-#     return org_query

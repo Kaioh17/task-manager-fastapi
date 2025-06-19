@@ -1,6 +1,10 @@
 # Service layer for user router
 from ..models import db_models
 from fastapi import HTTPException, status
+from .org_service import verify_token_exist, get_token
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def get_users_by_org_id(org_id: int, db):
     """Service function to fetch users by organization id."""
@@ -21,10 +25,14 @@ def create_user_service(user: 'schemas.CreateUser', db, utils):
     _validate_user(user, db)
    
     hashed_password = utils.hash(user.user_password)
-    user_query = db_models.Users(**user.model_dump())
+    user_query = db_models.Users(**user.model_dump(exclude ={"org_token"}))
     user_query.user_password = hashed_password
-    validate_org = _validate_organization(user.org_id, db)
-    user.org_id = validate_org
+
+
+    ##validate organnization token 
+    _validate_organization(user.org_id,user.org_token,db)
+
+
     db.add(user_query)
     db.commit()
     db.refresh(user_query)
@@ -49,10 +57,15 @@ def delete_user_service(confirm, db, current_user, utils):
     return True
 
 ##helper function to verify organization
-def _validate_organization(org: int,  db):
-    ##check if user exists
-    org_query = db.query(db_models.Organizations).filter(db_models.Organizations.org_id == org).first()
-    if not org_query:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Organization {org} does not exist")
+def _validate_organization(org_id: int, org_token: str,  db):
+    ##check if organization exists
+    verify_token_exist(org_id) #verifies the organization
+    token = get_token(org_id)
+
+    if token != org_token:
+        logger.warning("Incorrect Token!!")
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail = "Incorrect Token - Confirm token with admin")
     
-    return org
+
+    
+    

@@ -39,6 +39,6 @@ def tasks(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_
 @router.delete("/delete/{task_id}", status_code= status.HTTP_204_NO_CONTENT)
 async def delete_tasks(task_id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     logger.info("Deleting tasks...")
-    await task =  task_service.del_task_service(db, current_user, task_id)
+    task = await task_service.del_task_service(db, current_user, task_id)
     logger.info("Task deleted")
     return Response(status_code=status.HTTP_204_NO_CONTENT)

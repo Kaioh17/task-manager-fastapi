@@ -3,6 +3,10 @@ from ..models import db_models
 from fastapi import HTTPException, status
 from ..routers import _router_utils
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 def approve_task_service(assigned_id: int, db, current_user, add_rows, delete_row, logger):
     logger.info(f"User {current_user.user_id} attempting to approve assignment {assigned_id}.")
     _router_utils._ensure_not_regular_user(current_user)

@@ -38,9 +38,9 @@ class UserBase(BaseModel):
     user_email: EmailStr
     user_password: str =Field(min_length=8)
     
-
 class CreateUser(UserBase):
     org_id: int
+    org_token: str
     user_role: str = Field(pattern="^(user)$")
 
 class CreateAdmin(UserBase):

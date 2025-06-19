@@ -1,8 +1,6 @@
-from app.tests.test_db_setup import client,_clean_test_db,test_task,test_admin,test_org, test_user
-from app.models.schemas import UserOut
-from app.models import db_models
+from app.tests.test_db_setup import client, test_task, test_admin
+
 from app.core.oauth2 import create_access_token
-from app.utils import hash, verify
 
 #Test: Create user 
 def test_create_task(test_admin):

@@ -1,24 +1,4 @@
-from app.tests.test_db_setup import client,_clean_test_db,test_org, test_user
-from app.models.schemas import UserOut
-from app.core.oauth2 import create_access_token
-from app.utils import hash, verify
-
-
-# Test: Create organization
-
-# def test_create_org():
-#     response = client.post(
-#         "/org",
-#         headers={"Content-Type": "application/json"},
-#         json={
-#             "org_name": "Hunters Association",
-#             "org_description": "Hunt and kill monsters. Responsible for Journaling lores "
-#         }
-#     )
-#     assert response.status_code == 201
-#     data = response.json()
-#     assert data["org_name"] == "Hunters Association"
-#     assert data["org_description"].startswith("Hunt and kill")
+from app.tests.test_db_setup import client, test_org
 
 
 # Test: Get all organizations
@@ -46,16 +26,3 @@ def test_get_org_by_id(test_org):
 def test_get_org_by_invalid_id():
     response = client.get("/org/999999")
     assert response.status_code == 404
-
-
-# Test: Create organization with missing fields (should return 422)
-
-# def test_create_org_missing_fields():
-#     response = client.post(
-#         "/org",
-#         headers={"Content-Type": "application/json"},
-#         json={
-#             "org_description": "Missing name"
-#         }
-#     )
-#     assert response.status_code == 422

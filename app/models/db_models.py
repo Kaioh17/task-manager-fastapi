@@ -1,10 +1,12 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship
 from ..database import Base
 import random
 from sqlalchemy.sql.sqltypes import TIMESTAMP
+
 # from datetime import datetime
 
 # def random_idx():
@@ -66,6 +68,11 @@ class TaskAssignment(Base):
     assigned_by_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
     created_on = Column(TIMESTAMP(timezone = True), nullable=False
                         ,server_default=text('now()'))
+    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'task_name', name = 'unique_user_task'),
+    )
+
     task = relationship("Tasks", back_populates="assignments")
 
 class AuditLog(Base):

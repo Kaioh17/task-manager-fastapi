@@ -18,12 +18,14 @@ settings = Settings()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
 #stream handler
 stream_handler = logging.StreamHandler(sys.stdout)
-log_formatter = logging.Formatter("%(asctime)s [%(levelname)s]-%(message)s")
+log_formatter = logging.Formatter("%(asctime)s  [%(levelname)s] - %(message)s ")
 stream_handler.setFormatter(log_formatter)
-logger.addHandler(stream_handler)
 
+# Add handler to the root logger so all loggers inherit it
+logging.getLogger().addHandler(stream_handler)
 
 logger.info("starting fast api")
 
@@ -33,7 +35,13 @@ logger.info("starting fast api")
 db_models.Base.metadata.create_all(bind=engine)
 
 #Initialize FastAPI
-app = FastAPI()
+app = FastAPI(
+    title="Texoc Task Manager API",
+    description="API for managing tasks, users, and organizations.",
+    version="1.0.0"
+)
+
+
 
 # Add CORS middleware - ADD THIS SECTION
 app.add_middleware(

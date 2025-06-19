@@ -3,7 +3,7 @@ from ..models import db_models
 from fastapi import HTTPException, status
 from ..routers import _router_utils
 from ..models import schemas
-
+from .org_service import generate_org_token, _redis
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -23,10 +23,12 @@ def create_admin(user: 'schemas.CreateAdmin', db, utils):
     db.commit()
     db.refresh(org_query)
     
-   
-    
     org = db.query(db_models.Organizations).filter(db_models.Organizations.org_name == user.org_name).first()
     get_org_id = org.org_id
+
+    #Set organization token
+    token = generate_org_token(6)
+    _redis(get_org_id, token)
 
     #default org settings
     set_org_settings(db, get_org_id)
@@ -50,7 +52,8 @@ def create_admin(user: 'schemas.CreateAdmin', db, utils):
     return user_query
 
 def get_all_users(db, current_user):
-    _router_utils._ensure_admin_user(current_user)
+    _router_utils._ensure_not_regular_user(current_user)
+    _router_utils._ensure_manager_clearabce_not_low(current_user, db_models)
 
     logger.info(f"Fetching all users for org_id={current_user.org_id} by user_id={current_user.user_id}")
     user_query = db.query(db_models.Users).filter(db_models.Users.org_id == current_user.org_id)
