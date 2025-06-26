@@ -45,6 +45,5 @@ async def update_task_status(assignment_id: int,
                              db: Session = Depends(get_db), 
                              current_user: int = Depends(oauth2.get_current_user)):
     
-    assignment = assign_tasks_service.update_task_status(assignment_id, task_status, proof_of_completion, db, current_user)
+    assignment = await assign_tasks_service.update_task_status(assignment_id, task_status, proof_of_completion, db, current_user)
     return assignment
-

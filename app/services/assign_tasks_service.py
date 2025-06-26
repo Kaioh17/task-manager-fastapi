@@ -6,7 +6,7 @@ from datetime import timedelta, datetime
 import os
 from uuid import uuid4
 from app.routers.celery_task import delete_row,add_rows
-
+from .. import utils
 
 import logging
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ def assign_task(current_user, tasks, db):
 
     return assign_task
 
-def update_task_status(assignment_id, task_status, proof_of_completion, db, current_user):
+async def update_task_status(assignment_id, task_status, proof_of_completion, db, current_user):
     
 
     logger.info(f"User {current_user.user_id} attempting to update status for assignment {assignment_id}.")
@@ -89,7 +89,7 @@ def update_task_status(assignment_id, task_status, proof_of_completion, db, curr
                             detail = f"Task is past due date")
     db.commit()
 
-    add_files(db,  assigned_task, proof_of_completion, assignment_id)
+    await add_files(db,  assigned_task, proof_of_completion, assignment_id)
     
     
     db.refresh(assignment)
@@ -123,31 +123,42 @@ async def add_files(db,assigned_task,proof_of_completion, assignment_id):
         ]
         if proof_of_completion.content_type not in ALLOWED_TYPES:
             logger.warning(f"File type {proof_of_completion.content_type} not supported for assignment {assignment_id}.")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='File type not supported')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'File type not supported {", ".join(ALLOWED_TYPES.keys())}')
 
-        UPLOAD_DIR = "proofs/"
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        file_ext = os.path.splitext(proof_of_completion.filename)[-1]
-        file_path = os.path.join(UPLOAD_DIR, f"{uuid4()}{file_ext}")
+
+        # file_ext = os.path.splitext(proof_of_completion.filename)[-1]
+        # # file_path = os.path.join(f"{uuid4()}{file_ext}")
+        # filename = f"{uuid4()}{file_ext}"
         try:
-
-           
             contents = await proof_of_completion.read()
 
             MAX_FILE_SIZE_MB = 10
+            file_size_mb = len(contents) / (1024 * 1024)
+
             if len(contents) > MAX_FILE_SIZE_MB * 1024 * 1024:
                 logger.warning(f"File too large for assignment {assignment_id}.")
-                raise HTTPException(status_code=400, detail="File too large")
+                raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, 
+                                    detail=f"File too large ({file_size_mb:.2f}MB). Maximum size: {MAX_FILE_SIZE_MB}MB")
             
-            with open(file_path, "wb") as f:
-                f.write(contents)
+            # with open(file_path, "wb") as f:
+            #     f.write(contents)
 
-           
+            file_ext = os.path.splitext(proof_of_completion.filename)[-1]
+            if not file_ext:
+                file_ext = ALLOWED_TYPES.get(proof_of_completion.content_type, "")
+
+            filename = f"proof_of_completion/{assignment_id}/{uuid4()}{file_ext}"
+            ##upload to s3
+            utils.upload_file_to_s3(contents, filename, proof_of_completion.content_type)
+
+            ##create private url
+            file_url = utils.generate_presigned_url(filename)
+            assigned_task.update({"proof_of_completion": file_url})
+            logger.info(f"Proof of completion uploaded for assignment {assignment_id} at {file_url}.")
         except Exception as e:
             logger.error(f"File upload failed for assignment {assignment_id}: {str(e)}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"File upload failed: {str(e)}")
-        assigned_task.update({"proof_of_completion": file_path})
-        logger.info(f"Proof of completion uploaded for assignment {assignment_id} at {file_path}.")
+        
     else:
         assigned_task.update({"proof_of_completion": None})
         logger.info(f"No proof of completion provided for assignment {assignment_id}.")
