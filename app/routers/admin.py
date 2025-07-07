@@ -63,3 +63,17 @@ def update_org_settings(setting: schemas.org_settings,
     """Admin will set organiztions default settings here"""
     updated_settings = admin_services.update_settings(db, current_user, setting)
     return updated_settings
+
+@router.delete("/delete", response_model = schemas.DeletedResponse, status_code=status.HTTP_404_NOT_FOUND)
+def delete_org(payload: schemas.DeleteUser ,current_user: int = Depends(oauth2.get_current_user), db: Session = Depends(get_db)):
+    """Delete organization and all users under"""
+    delete_org = admin_services.delete_org(db, payload, current_user)
+
+    if delete_org:
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail = f"organization {current_user.org_id} still exists!!! ")
+    return Response(status_code=status.HTTP_404_NOT_FOUND)
+
+@router.put("/updateProfile", status_code=status.HTTP_202_ACCEPTED, response_model=schemas.UserOut)
+def update_admin_profile(payload: schemas.UpdateAdmin, db: Session = Depends(get_db) ):
+    updated_admin = admin_services.update_admin_profile(payload)
+    return updated_admin

@@ -31,6 +31,8 @@ class org_settings(BaseModel):
 class PromoteUser(BaseModel):
     user_role: str = "manager"
 
+
+
 """users schemas"""
 class UserBase(BaseModel):
     first_name: str
@@ -48,6 +50,9 @@ class CreateAdmin(UserBase):
     org_name: str
     org_description: str
     
+class UpdateAdmin(UserBase):
+    org_name: str
+    org_description: str
 class DeleteUser(BaseModel):
     user_password : str
 
@@ -107,3 +112,9 @@ class AssignedTaskOut(BaseModel):
     user_id: int
     task: TaskOut
     due_date: datetime
+
+class DeletedResponse(BaseModel):
+    organization: OrgOut
+    user_id: int
+    users: UserOut
+    model_config = {"from_attributes": True}

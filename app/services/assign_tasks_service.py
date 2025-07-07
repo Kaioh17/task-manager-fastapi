@@ -19,15 +19,18 @@ def assign_task(current_user, tasks, db):
     _router_utils._ensure_not_regular_user(current_user)
     _router_utils._validate_user(db_models, tasks.user_id, db)
 
-    
-
+      
 
     tasks_query = db.query(db_models.Tasks).filter(db_models.Tasks.task_id == tasks.task_id)
     task = tasks_query.first()
 
     #check if task has already been assigned 
     
+    assigned_task = db.query(db_models.TaskAssignment).filter(db_models.TaskAssignment.task_name == task.task_name)
+    task_name = assigned_task.first()
 
+    if task_name:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail = "task name already exists")
     if not task:
         logger.info(f"Task {tasks.task_id} does not exists")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
@@ -42,11 +45,15 @@ def assign_task(current_user, tasks, db):
                                     task_description = task.task_description, 
                                     **tasks.dict()
                                 )
+  
     
+
+
     ##check if due_date is valid (set at least 1 hour after current time)
     offset = datetime.utcnow() + timedelta(hours=1)
     if tasks.due_date < offset:
         raise HTTPException(status_code=status.HTTP_425_TOO_EARLY, detail="Date and time not valid")
+    
     
     db.add(assign_task)
     db.commit()
@@ -89,7 +96,8 @@ async def update_task_status(assignment_id, task_status, proof_of_completion, db
                             detail = f"Task is past due date")
     db.commit()
 
-    await add_files(db,  assigned_task, proof_of_completion, assignment_id)
+    #add files
+    await add_files(db,  assigned_task, proof_of_completion, assignment_id, current_user)
     
     
     db.refresh(assignment)
@@ -114,7 +122,7 @@ async def update_task_status(assignment_id, task_status, proof_of_completion, db
     return assignment
 
 
-async def add_files(db,assigned_task,proof_of_completion, assignment_id):
+async def add_files(db,assigned_task,proof_of_completion, assignment_id, current_user):
     file_path = None
     if proof_of_completion:
         ALLOWED_TYPES = [
@@ -148,11 +156,12 @@ async def add_files(db,assigned_task,proof_of_completion, assignment_id):
                 file_ext = ALLOWED_TYPES.get(proof_of_completion.content_type, "")
 
             filename = f"proof_of_completion/{assignment_id}/{uuid4()}{file_ext}"
+            # filename = company_{org_id}/{filename}
             ##upload to s3
-            utils.upload_file_to_s3(contents, filename, proof_of_completion.content_type)
+            utils.upload_file_to_s3(contents, filename, current_user.org_id, proof_of_completion.content_type)
 
             ##create private url
-            file_url = utils.generate_presigned_url(filename)
+            file_url = utils.generate_presigned_url(filename, current_user.org_id)
             assigned_task.update({"proof_of_completion": file_url})
             logger.info(f"Proof of completion uploaded for assignment {assignment_id} at {file_url}.")
         except Exception as e:

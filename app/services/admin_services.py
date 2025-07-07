@@ -3,7 +3,11 @@ from ..models import db_models
 from fastapi import HTTPException, status
 from ..routers import _router_utils
 from ..models import schemas
+from .. import utils
 from .org_service import generate_org_token, _redis
+from ..utils import delete_all_files_in_bucket
+
+
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -122,6 +126,40 @@ def set_org_settings(db, org_id):
         db.rollback()
         raise 
 
+def delete_org(db, payload, current_user):
+    _router_utils._ensure_admin_user(current_user)
 
+    ##delete admin, org, s3 bucket, users under admin
+    if not utils.verify(payload.user_password, current_user.user_password):
+        raise Exception("Authentication not recognized!!")
+    try: 
+        logger.info(f"Deleting all {current_user.org_id}row in db....")
+        org_query = db.query(db_models.Organizations).filter(db_models.Organizations.org_id == current_user.org_id)
+        org = org_query.first()
+
+        org_query.delete(synchronize_session = False)
+      
+        logger.info("Deleted rows in table!!!")
+
+
+        logger.info("Deleting saved s3 files....")
+        delete_all_files_in_bucket(org.org_id)
+        logger.info("All objects deleted!!!")
+
+        db.commit()
+    except Exception as e:
+        logger.info("Unexpected error in (app/services/admin_services.py)")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+                            ,detail="Unexpected Error!!"
+                            )
     
 
+#using put method
+def update_admin_profile(db, payload, current_user):
+    _router_utils._validate_user()
+
+    try:
+        db.query(db_models.Users).filter(db_models.Users.user_id == current_user.user_id)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+                            , detail = "Unexpected error")

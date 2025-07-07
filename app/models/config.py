@@ -16,9 +16,14 @@ class Settings(BaseSettings):
     db_password: str
     db_host: str = "db"  # Docker service name
     db_port: int = 5432
-    
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+    AWS_REGION: str
+    S3_BUCKET: str
+        
   
 
     class Config:
         env_file = ".env"
+        # ec2_env_file = ".env.ec2"
 
